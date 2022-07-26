@@ -65,17 +65,18 @@ export const useSWRHandler = <Data = any, Error = any>(
     refreshWhenHidden,
     refreshWhenOffline,
     keepPreviousData
-  } = config
-
+  } = config // get merged config
   const [EVENT_REVALIDATORS, MUTATION, FETCH] = SWRGlobalState.get(
     cache
   ) as GlobalState
-
   // `key` is the identifier of the SWR `data` state, `keyInfo` holds extra
   // states such as `error` and `isValidating` inside,
   // all of them are derived from `_key`.
   // `fnArg` is the argument/arguments parsed from the key, which will be passed
   // to the fetcher.
+  if (typeof _key === 'function') {
+    // debugger
+  }
   const [key, fnArg] = serialize(_key)
 
   // If it's the initial render of this hook.
@@ -135,7 +136,6 @@ export const useSWRHandler = <Data = any, Error = any>(
       if (suspense) return false
       return true
     })()
-
     const getSelectedCache = () => {
       const state = getCache()
 
@@ -170,20 +170,22 @@ export const useSWRHandler = <Data = any, Error = any>(
   // Get the current state that SWR should return.
   const cached = useSyncExternalStore(
     useCallback(
-      (callback: () => void) =>
-        subscribeCache(
+      (callback: () => void) => {
+        console.log('run store subscribe', callback)
+        return subscribeCache(
           key,
           (prev: State<Data, any>, current: State<Data, any>) => {
             if (!isEqual(prev, current)) callback()
           }
-        ),
+        )
+      },
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [cache, key]
     ),
     getSnapshot,
     getSnapshot
   )
-
+  console.log('cached', cached)
   const isInitialMount = !initialMountedRef.current
   const cachedData = cached.data
 
@@ -240,7 +242,6 @@ export const useSWRHandler = <Data = any, Error = any>(
   const revalidate = useCallback(
     async (revalidateOpts?: RevalidatorOptions): Promise<boolean> => {
       const currentFetcher = fetcherRef.current
-
       if (
         !key ||
         !currentFetcher ||
@@ -258,7 +259,6 @@ export const useSWRHandler = <Data = any, Error = any>(
       // If there is no ongoing concurrent request, or `dedupe` is not set, a
       // new request should be initiated.
       const shouldStartNewRequest = !FETCH[key] || !opts.dedupe
-
       /*
          For React 17
          Do unmount check for calls:
@@ -329,7 +329,6 @@ export const useSWRHandler = <Data = any, Error = any>(
         // considered here.
         ;[newData, startAt] = FETCH[key]
         newData = await newData
-
         if (shouldStartNewRequest) {
           // If the request isn't interrupted, clean it up after the
           // deduplication interval.
@@ -367,6 +366,7 @@ export const useSWRHandler = <Data = any, Error = any>(
         // we have to ignore the revalidation result (res) because it's no longer fresh.
         // meanwhile, a new revalidation should be triggered when the mutation ends.
         const mutationInfo = MUTATION[key]
+
         if (
           !isUndefined(mutationInfo) &&
           // case 1
@@ -376,6 +376,7 @@ export const useSWRHandler = <Data = any, Error = any>(
             // case 3
             mutationInfo[1] === 0)
         ) {
+          console.log('复现了')
           finishRequestAndUpdateState()
           if (shouldStartNewRequest) {
             if (callbackSafeguard()) {

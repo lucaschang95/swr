@@ -74,6 +74,7 @@ export async function internalMutate<Data>(
   return mutateByKey(_key)
 
   async function mutateByKey(_k: Key): Promise<Data | undefined> {
+    console.log('run mutateByKey')
     // Serialize key
     const [key] = serialize(_k)
     if (!key) return
@@ -84,6 +85,7 @@ export async function internalMutate<Data>(
 
     const revalidators = EVENT_REVALIDATORS[key]
     const startRevalidate = () => {
+      console.log('run startRevalidate')
       if (revalidate) {
         // Invalidate the key by deleting the concurrent request markers so new
         // requests will not be deduped.
@@ -96,20 +98,20 @@ export async function internalMutate<Data>(
       }
       return get().data
     }
-
+    console.log(args.length)
     // If there is no new data provided, revalidate the key with current state.
     if (args.length < 3) {
       // Revalidate and broadcast state.
       return startRevalidate()
     }
-
     let data: any = _data
     let error: unknown
 
     // Update global timestamps.
     const beforeMutationTs = getTimestamp()
+    const t1 = Date.now()
     MUTATION[key] = [beforeMutationTs, 0]
-
+    console.log('set before')
     const hasOptimisticData = !isUndefined(optimisticData)
     const state = get()
 
@@ -182,9 +184,12 @@ export async function internalMutate<Data>(
 
     // Reset the timestamp to mark the mutation has ended.
     MUTATION[key][1] = getTimestamp()
+    const dura = Date.now() - t1
+    console.log('dura', dura)
 
     // Update existing SWR Hooks' internal states:
     const res = await startRevalidate()
+    const dura1 = Date.now() - t1
 
     // The mutation and revalidation are ended, we can clear it since the data is
     // not an optimistic value anymore.

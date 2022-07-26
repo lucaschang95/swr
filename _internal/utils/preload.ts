@@ -6,7 +6,6 @@ import { SWRGlobalState } from './global-state'
 export const preload = <Data = any>(key_: Key, fetcher: BareFetcher<Data>) => {
   const key = serialize(key_)[0]
   const [, , , PRELOAD] = SWRGlobalState.get(cache) as GlobalState
-
   // Prevent preload to be called multiple times before used.
   if (PRELOAD[key]) return PRELOAD[key]
 

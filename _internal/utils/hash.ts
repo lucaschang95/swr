@@ -28,7 +28,7 @@ export const stableHash = (arg: any): string => {
   if (OBJECT(arg) === arg && !isDate && constructor != RegExp) {
     // Object/function, not null/date/regexp. Use WeakMap to store the id first.
     // If it's already hashed, directly return the result.
-    result = table.get(arg)
+    result = table.get(arg) // first check the WeakMap to see if it's already hashed
     if (result) return result
 
     // Store the hash first for circular reference detection before entering the
